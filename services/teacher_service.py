@@ -42,7 +42,7 @@ def upload_assignment_logic(course_id: int, assignment_title: str, description: 
 
 
 def upload_results_logic(course_id: int, assignment_id: int, description: Optional[str], file_link: str) -> Result:
-    """Saves results file link to the database."""
+
     print(f"SERVICE: Inserting results link '{file_link}' into Supabase.")
     response = supabase.table("results").insert({
         "course_id": course_id,

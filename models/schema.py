@@ -52,7 +52,7 @@ class TeacherPayment(BaseModel):
     amount: float
     payment_date: date
 
-# Model for creating a payment issue
+
 class PaymentIssueCreate(BaseModel):
     teacher_id: int
     description: str
