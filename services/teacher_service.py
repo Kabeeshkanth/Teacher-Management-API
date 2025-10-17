@@ -39,7 +39,7 @@ def upload_assignment_logic(course_id: int, assignment_title: str, description: 
     }).execute()
     created_record = response.data[0]
     return Assignment(**created_record)
-"""."""
+
 
 def upload_results_logic(course_id: int, assignment_id: int, description: Optional[str], file_link: str) -> Result:
     """Saves results file link to the database."""
