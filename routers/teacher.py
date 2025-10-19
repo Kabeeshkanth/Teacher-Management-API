@@ -1,7 +1,9 @@
+# python
+# File: `routers/teacher.py`
 
 from fastapi import APIRouter, Form, File, UploadFile
 from typing import List, Optional
-from datetime import date
+from datetime import date, datetime  # Added datetime import
 
 from models.schema import (
     CourseMaterial,
@@ -31,30 +33,40 @@ async def upload_lecture_notes(
 ):
     return teacher_service.upload_lecture_notes_logic(course_id, material_title, file_link)
 
+
 @router.post("/assignments/upload", response_model=Assignment)
 async def upload_assignment(
     course_id: int = Form(...),
     assignment_title: str = Form(...),
     description: Optional[str] = Form(None),
+    due_date: Optional[datetime] = Form(None),
     file_link: str = Form(...)
 ):
-    """Saves the link to an assignment."""
-    return teacher_service.upload_assignment_logic(course_id, assignment_title, description, file_link)
+    """Saves the link/path to an assignment, optional due date allowed."""
+    return teacher_service.upload_assignment_logic(
+        course_id, assignment_title, description, due_date, file_link
+    )
+
 
 @router.post("/results/upload", response_model=Result)
 async def upload_results(
     course_id: int = Form(...),
     assignment_id: int = Form(...),
+    submission_id: str = Form(...),  # Changed to str (UUID)
     description: Optional[str] = Form(None),
     file_link: str = Form(...)
 ):
     """Saves the link to a results file."""
-    return teacher_service.upload_results_logic(course_id, assignment_id, description, file_link)
+    return teacher_service.upload_results_logic(
+        course_id, assignment_id, submission_id, description, file_link
+    )
+
 
 @router.post("/live-classes/schedule", response_model=LiveClass)
 async def schedule_live_class(live_class: LiveClassCreate):
     """Schedule and share a live class link."""
     return teacher_service.schedule_live_class_logic(live_class)
+
 
 @router.get("/feedback/{course_id}", response_model=List[Feedback])
 async def review_feedback(course_id: int):
@@ -62,15 +74,16 @@ async def review_feedback(course_id: int):
     return teacher_service.review_feedback_logic(course_id)
 
 
-@router.get("/payments/{teacher_id}", response_model=List[TeacherPayment]) # Updated response model
-async def view_payments(teacher_id: int):
-    """View all payments made directly to a specific teacher."""
+@router.get("/payments/{teacher_id}", response_model=List[TeacherPayment])
+async def view_payments(teacher_id: str):  # Changed from int to str
     return teacher_service.get_payments_for_teacher_logic(teacher_id)
+
 
 @router.post("/issues/payment", response_model=PaymentIssue)
 async def report_payment_issue(issue_data: PaymentIssueCreate):
     """Allows a teacher to report a payment-related issue."""
     return teacher_service.report_payment_issue_logic(issue_data)
+
 
 @router.post("/attendance/upload", response_model=Attendance)
 async def upload_attendance(
@@ -78,5 +91,4 @@ async def upload_attendance(
     class_date: date = Form(...),
     file: UploadFile = File(...)
 ):
-
     return await teacher_service.upload_attendance_logic(course_id, class_date, file)

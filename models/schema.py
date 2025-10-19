@@ -40,22 +40,22 @@ class LiveClass(LiveClassCreate):
 
 class Feedback(BaseModel):
     feedback_id: int
-    student_id: int
+    student_id: str
     course_id: int
     comment: Optional[str] = None
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
 
-# viewing a teacher payment record
+
 class TeacherPayment(BaseModel):
     payment_id: int
-    teacher_id: int
+    teacher_id: str
     amount: float
     payment_date: date
 
 
 class PaymentIssueCreate(BaseModel):
-    teacher_id: int
+    teacher_id: str
     description: str
 
 # Model for the response after creating a payment issue
