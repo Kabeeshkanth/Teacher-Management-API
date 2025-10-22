@@ -7,8 +7,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Include the teacher router with absolute import
 app.include_router(teacher.router)
+
 
 @app.get("/")
 def read_root():

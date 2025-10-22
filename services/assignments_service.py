@@ -1,17 +1,15 @@
-# python
-# File: `services/assignments_service.py`
-
-from typing import Optional, Any, Dict
+from typing import Dict, Any, Optional
 from datetime import datetime
 import logging
-
 from fastapi import HTTPException, status
 from utils.database import get_supabase_client
+from utils.auth import verify_teacher_course_access
 
 logger = logging.getLogger(__name__)
 
 
 def upload_assignment_logic(
+        teacher_id: str,
         course_id: int,
         assignment_title: str,
         description: Optional[str],
@@ -19,23 +17,30 @@ def upload_assignment_logic(
         file_link: str,
 ) -> Dict[str, Any]:
     """
-    Insert a new assignment into the `Assignments` table.
-    Maps all DB columns: assignment_id, course_id, assignment_title, description, due_date, file_path, created_at
+    Creates assignment matching database schema:
+    - assignment_id (auto-generated)
+    - course_id
+    - assignment_title
+    - description (optional)
+    - due_date (optional)
+    - file_path
+    - created_at (auto-generated DEFAULT CURRENT_TIMESTAMP)
     """
+    verify_teacher_course_access(teacher_id, course_id)
     supabase = get_supabase_client()
 
     payload: Dict[str, Any] = {
         "course_id": course_id,
         "assignment_title": assignment_title,
         "description": description,
-        "file_path": file_link,  # maps file_link param -> file_path column
+        "file_path": file_link,
     }
 
     if due_date is not None:
         payload["due_date"] = due_date.isoformat() if isinstance(due_date, datetime) else str(due_date)
 
     try:
-        resp = supabase.table("Assignments").insert(payload).select("*").execute()
+        resp = supabase.table("assignments").insert(payload).select("*").execute()
 
         if getattr(resp, "error", None):
             logger.error("Supabase insert error: %s", resp.error)

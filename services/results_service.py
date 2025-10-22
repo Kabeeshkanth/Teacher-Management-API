@@ -1,33 +1,37 @@
-# python
-# File: `services/results_service.py`
-
-from typing import Optional, Dict, Any
+from typing import Dict, Any
+from uuid import UUID
 import logging
 from fastapi import HTTPException, status
 from utils.database import get_supabase_client
+from utils.auth import verify_teacher_course_access
+from models.schema import Grade
 
 logger = logging.getLogger(__name__)
 
 
 def upload_results_logic(
+        teacher_id: str,
         course_id: int,
         assignment_id: int,
-        submission_id: str,  # Changed from hardcoded int to UUID string
-        description: Optional[str],
-        file_link: str
+        student_id: UUID,
+        result: Grade
 ) -> Dict[str, Any]:
     """
-    Insert result into `results` table.
-    Maps all columns: result_id, course_id, assignment_id, submission_id (UUID), file_path, description
+    Uploads student results matching database schema:
+    - result_id (auto-generated)
+    - course_id
+    - assignment_id
+    - student_id (UUID)
+    - result (character varying: A/B/C/FAIL)
     """
+    verify_teacher_course_access(teacher_id, course_id)
     supabase = get_supabase_client()
 
     payload = {
         "course_id": course_id,
         "assignment_id": assignment_id,
-        "submission_id": submission_id,  # Must be valid UUID string
-        "file_path": file_link,
-        "description": description
+        "student_id": str(student_id),
+        "result": result.value
     }
 
     try:

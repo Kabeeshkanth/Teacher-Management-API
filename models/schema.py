@@ -1,7 +1,15 @@
-
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime, date
+from enum import Enum
+from uuid import UUID
+
+
+class Grade(Enum):
+    A = "A"
+    B = "B"
+    C = "C"
+    FAIL = "FAIL"
 
 
 class CourseMaterial(BaseModel):
@@ -10,6 +18,7 @@ class CourseMaterial(BaseModel):
     material_title: str
     file_path: str
     upload_date: Optional[datetime] = Field(default_factory=datetime.utcnow)
+
 
 class Assignment(BaseModel):
     assignment_id: int
@@ -20,13 +29,14 @@ class Assignment(BaseModel):
     file_path: str
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
+
 class Result(BaseModel):
     result_id: int
     course_id: int
     assignment_id: int
-    submission_id: int
-    file_path: str
-    description: Optional[str] = None
+    student_id: UUID
+    result: Grade
+
 
 class LiveClassCreate(BaseModel):
     course_id: int
@@ -35,39 +45,21 @@ class LiveClassCreate(BaseModel):
     start_time: datetime
     end_time: datetime
 
+
 class LiveClass(LiveClassCreate):
     class_id: int
 
+
 class Feedback(BaseModel):
     feedback_id: int
-    student_id: str
+    student_id: UUID
     course_id: int
     comment: Optional[str] = None
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
 
-
-class TeacherPayment(BaseModel):
-    payment_id: int
-    teacher_id: str
-    amount: float
-    payment_date: date
-
-
-class PaymentIssueCreate(BaseModel):
-    teacher_id: str
-    description: str
-
-# Model for the response after creating a payment issue
-class PaymentIssue(PaymentIssueCreate):
-    issue_id: int
-    status: str
-    reported_at: datetime
-    resolved_at: Optional[datetime] = None
-
-# Model for the response after uploading attendance
 class Attendance(BaseModel):
     attendance_id: int
     course_id: int
     class_date: date
-    file_path: str
+    attendance_link: str
