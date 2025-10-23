@@ -49,19 +49,23 @@ async def upload_assignment(
     )
 
 
+
 @router.post("/results/upload", response_model=Result)
 async def upload_results(
     request: Request,
     course_id: int = Form(...),
-    assignment_id: int = Form(...),
+    assignment_title: str = Form(...),  # Changed from assignment_id
     student_id: str = Form(...),
     result: Grade = Form(...),
     teacher_id: str = Depends(verify_teacher)
 ):
-    """Saves the grade for a student's assignment result."""
+    """
+    Saves the grade for a student's assignment result.
+    Automatically fetches assignment_id from assignment_title and student_name from student_id.
+    """
     from uuid import UUID
     return teacher_service.upload_results_logic(
-        teacher_id, course_id, assignment_id, UUID(student_id), result
+        teacher_id, course_id, assignment_title, UUID(student_id), result
     )
 
 

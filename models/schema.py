@@ -30,11 +30,14 @@ class Assignment(BaseModel):
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
 
+
 class Result(BaseModel):
     result_id: int
     course_id: int
     assignment_id: int
+    assignment_title: str
     student_id: UUID
+    student_name: str
     result: Grade
 
 

@@ -43,25 +43,22 @@ def verify_teacher_exists(teacher_id: str) -> None:
 
 def verify_teacher_course_access(teacher_id: str, course_id: int) -> None:
     """
-    First verify teacher exists, then ensure teacher_id equals course.teacher_ids.
+    Verify teacher exists and course exists.
+    Ownership check removed - any teacher can access any course.
     Raises:
-      - 403 if teacher not found or not authorized
+      - 403 if teacher not found
       - 404 if course not found
       - 500 on DB error
     """
     verify_teacher_exists(teacher_id)
 
     supabase = get_supabase_client()
-    resp = supabase.table("course").select("teacher_ids").eq("course_id", course_id).execute()
+    resp = supabase.table("course").select("course_id").eq("course_id", course_id).execute()
 
     if getattr(resp, "error", None):
-        logger.error("DB error checking course access: %s", resp.error)
+        logger.error("DB error checking course: %s", resp.error)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="DB error checking course")
 
     rows = getattr(resp, "data", None)
     if not rows:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
-
-    course_teacher_id = rows[0].get("teacher_ids")
-    if course_teacher_id is None or str(course_teacher_id) != str(teacher_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Teacher not authorized for this course")
