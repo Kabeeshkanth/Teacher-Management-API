@@ -16,17 +16,9 @@ def upload_results_logic(
         student_id: UUID,
         result: Grade
 ) -> Dict[str, Any]:
-    """
-    Uploads student results matching database schema:
-    - result_id (auto-generated)
-    - course_id
-    - assignment_id
-    - student_id (UUID)
-    - result (character varying: A/B/C/FAIL)
-    """
     verify_teacher_course_access(teacher_id, course_id)
-    supabase = get_supabase_client()
 
+    supabase = get_supabase_client()
     payload = {
         "course_id": course_id,
         "assignment_id": assignment_id,

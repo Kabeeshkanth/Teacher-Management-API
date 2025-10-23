@@ -1,89 +1,67 @@
-from fastapi import Request, HTTPException, status
+from fastapi import HTTPException, status, Header
 from utils.database import get_supabase_client
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def verify_teacher(request: Request) -> str:
+def verify_teacher(teacher_id: str = Header(..., alias="X-Teacher-ID")) -> str:
     """
-    Validates that the current user is a teacher.
-    Returns teacher_id (UUID) if valid, raises HTTPException otherwise.
-    """
-    user_id = request.cookies.get("user_id")
-    role = request.cookies.get("role")
+    FastAPI dependency to extract and validate teacher_id from request headers.
+    Returns the teacher_id if valid.
 
-    if not user_id:
-        logger.warning("Missing user_id cookie in request")
+    Usage: Add as dependency in route: teacher_id: str = Depends(verify_teacher)
+    """
+    if not teacher_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing user ID cookie"
+            detail="Teacher ID header missing"
         )
 
-    # Role check
-    if role != "teacher":
-        logger.warning(f"Access denied: user {user_id} has role '{role}', expected 'teacher'")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied: teacher role required"
-        )
-
-    # Verify against Supabase 'teachers' table
-    supabase = get_supabase_client()
-    try:
-        result = supabase.table("teachers").select("id").eq("id", user_id).execute()
-
-        if not result.data:
-            logger.error(f"Teacher verification failed: user_id {user_id} not found in teachers table")
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Invalid teacher account"
-            )
-
-        logger.info(f"Teacher {user_id} verified successfully")
-        return user_id
-
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.exception(f"Error verifying teacher: {exc}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to verify teacher credentials"
-        )
+    verify_teacher_exists(teacher_id)
+    return teacher_id
 
 
-def verify_teacher_course_access(teacher_id: str, course_id: int) -> bool:
+def verify_teacher_exists(teacher_id: str) -> None:
     """
-    Verify if teacher is assigned to the specific course.
-    Matches teacher_id with teacher_ids column in course table.
+    Verify that the teacher_id exists in the teachers table.
+    Raises:
+      - 403 if teacher not found
+      - 500 on DB error
     """
     supabase = get_supabase_client()
+    resp = supabase.table("teachers").select("id").eq("id", teacher_id).execute()
 
-    try:
-        response = supabase.table("course").select("teacher_ids").eq("course_id", course_id).execute()
+    if getattr(resp, "error", None):
+        logger.error("DB error verifying teacher: %s", resp.error)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="DB error verifying teacher")
 
-        if not response.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Course {course_id} not found"
-            )
+    rows = getattr(resp, "data", None)
+    if not rows:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Teacher not found")
 
-        assigned_teacher_id = response.data[0].get("teacher_ids")
 
-        if assigned_teacher_id != teacher_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not assigned to this course"
-            )
+def verify_teacher_course_access(teacher_id: str, course_id: int) -> None:
+    """
+    First verify teacher exists, then ensure teacher_id equals course.teacher_ids.
+    Raises:
+      - 403 if teacher not found or not authorized
+      - 404 if course not found
+      - 500 on DB error
+    """
+    verify_teacher_exists(teacher_id)
 
-        return True
+    supabase = get_supabase_client()
+    resp = supabase.table("course").select("teacher_ids").eq("course_id", course_id).execute()
 
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.exception("Error verifying teacher course access")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(exc)
-        )
+    if getattr(resp, "error", None):
+        logger.error("DB error checking course access: %s", resp.error)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="DB error checking course")
+
+    rows = getattr(resp, "data", None)
+    if not rows:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
+
+    course_teacher_id = rows[0].get("teacher_ids")
+    if course_teacher_id is None or str(course_teacher_id) != str(teacher_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Teacher not authorized for this course")
