@@ -7,6 +7,7 @@ from fastapi import HTTPException, status
 from utils.database import get_supabase_client
 from utils.auth import verify_teacher_course_access
 from services.module_service import verify_module_owner
+from typing import Dict, Any, Optional, List
 
 logger = logging.getLogger(__name__)
 
