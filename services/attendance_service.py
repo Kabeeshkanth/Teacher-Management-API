@@ -19,6 +19,7 @@ def upload_attendance_logic(teacher_id: str, course_id: int, class_date: date, a
     verify_teacher_course_access(teacher_id, course_id)
     supabase = get_supabase_client()
 
+
     try:
         logger.info(
             f"Saving attendance: course_id={course_id}, class_date={class_date.isoformat()}, attendance_link={attendance_link}")

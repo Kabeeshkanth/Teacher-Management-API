@@ -10,6 +10,7 @@ app = FastAPI(
 app.include_router(teacher.router)
 
 
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Teacher Management API"}

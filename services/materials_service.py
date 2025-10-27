@@ -83,6 +83,7 @@ def update_material(teacher_id: str, material_id: int, **updates) -> CourseMater
     return CourseMaterial(**resp.data[0])
 
 
+
 def delete_material(teacher_id: str, material_id: int) -> Dict[str, str]:
     supabase = get_supabase_client()
     material_resp = supabase.table("course_materials").select("course_id").eq("material_id", material_id).execute()

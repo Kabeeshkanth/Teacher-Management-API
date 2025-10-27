@@ -6,6 +6,7 @@ from .feedback_service import review_feedback_logic
 from .attendance_service import upload_attendance_logic
 from .modules_service import get_modules_for_course, create_module, update_module, delete_module
 
+
 __all__ = [
     "upload_lecture_notes_logic",
     "upload_assignment_logic",

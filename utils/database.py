@@ -8,6 +8,7 @@ from supabase import create_client, Client
 # Load environment variables from .env file (if present)
 load_dotenv()
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

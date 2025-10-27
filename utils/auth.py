@@ -64,6 +64,7 @@ def verify_teacher_course_access(teacher_id: str, course_id: int) -> None:
 
 def verify_teacher_form(teacher_id: str) -> str:
     """
+
     Verify teacher_id from form input against courses table.
     Raises 403 if no courses assigned.
     """

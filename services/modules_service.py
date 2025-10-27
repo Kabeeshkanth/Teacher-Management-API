@@ -47,6 +47,7 @@ def update_module(teacher_id: str, module_id: int, module_name: Optional[str], m
     return Module(**resp.data[0])
 
 
+
 def delete_module(teacher_id: str, module_id: int) -> Dict[str, str]:
     supabase = get_supabase_client()
     module_resp = supabase.table("modules").select("course_id").eq("module_id", module_id).eq("teacher_id", teacher_id).execute()
