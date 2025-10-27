@@ -1,3 +1,4 @@
+# services/attendance_service.py
 import logging
 from datetime import date
 from fastapi import HTTPException
@@ -28,7 +29,7 @@ def upload_attendance_logic(teacher_id: str, course_id: int, class_date: date, a
             "course_id": course_id,
             "class_date": class_date.isoformat(),
             "attendance_link": attendance_link
-        }).select("*").execute()
+        }).execute()
 
         logger.info(f"Database response: {db_response}")
 

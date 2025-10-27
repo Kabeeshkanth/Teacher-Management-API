@@ -1,3 +1,4 @@
+# services/liveclass_service.py
 import logging
 from fastapi import HTTPException, status
 from models.schema import LiveClass, LiveClassCreate
@@ -30,7 +31,7 @@ def schedule_live_class_logic(teacher_id: str, live_class: LiveClassCreate) -> L
     }
 
     try:
-        response = supabase.table("live_classes").insert(data_to_insert).select("*").execute()
+        response = supabase.table("live_classes").insert(data_to_insert).execute()
 
         if getattr(response, "error", None):
             logger.error("Supabase insert error: %s", response.error)

@@ -1,3 +1,4 @@
+# services/materials_service.py
 import logging
 from typing import List, Dict, Any, Optional
 from fastapi import HTTPException, status
@@ -30,7 +31,7 @@ def upload_lecture_notes_logic(teacher_id: str, course_id: int, module_id: int, 
             "module_id": module_id,
             "material_title": material_title,
             "file_path": file_link
-        }).select("*").execute()
+        }).execute()
 
         if getattr(response, "error", None):
             logger.error("Supabase insert error: %s", response.error)

@@ -1,3 +1,4 @@
+# services/assignments_service.py
 from typing import Dict, Any, Optional, List
 
 from datetime import datetime
@@ -49,7 +50,7 @@ def upload_assignment_logic(
         payload["due_date"] = due_date.isoformat() if isinstance(due_date, datetime) else str(due_date)
 
     try:
-        resp = supabase.table("assignments").insert(payload).select("*").execute()
+        resp = supabase.table("assignments").insert(payload).execute()
 
         if getattr(resp, "error", None):
             logger.error("Supabase insert error: %s", resp.error)

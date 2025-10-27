@@ -1,3 +1,4 @@
+# utils/auth.py
 from fastapi import HTTPException, status, Request
 from utils.database import get_supabase_client
 import logging
@@ -7,17 +8,27 @@ logger = logging.getLogger(__name__)
 
 def verify_teacher(request: Request) -> str:
     """
-    FastAPI dependency to extract and validate teacher_id from cookies.
+    FastAPI dependency to extract teacher_id from headers or cookies,
+    and verify the teacher exists in the 'teachers' table.
     Returns the teacher_id if valid.
     """
-    teacher_id = request.cookies.get("teacher_id")
+    teacher_id = (
+        request.headers.get("x-user-id")
+        or request.cookies.get("user_id")
+    )
     if not teacher_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Teacher ID not found in cookies"
+            detail="User ID not found in headers or cookies"
         )
 
-    verify_teacher_exists(teacher_id)
+    try:
+        verify_teacher_exists(teacher_id)
+    except HTTPException as e:
+        if e.status_code == 403:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: Not a valid teacher")
+        raise e
+
     return teacher_id
 
 
@@ -60,18 +71,3 @@ def verify_teacher_course_access(teacher_id: str, course_id: int) -> None:
     rows = getattr(resp, "data", None)
     if not rows:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found or not assigned to teacher")
-
-
-def verify_teacher_form(teacher_id: str) -> str:
-    """
-
-    Verify teacher_id from form input against courses table.
-    Raises 403 if no courses assigned.
-    """
-    supabase = get_supabase_client()
-    resp = supabase.table("course").select("course_id").eq("teacher_ids", teacher_id).execute()
-    if getattr(resp, "error", None):
-        raise HTTPException(status_code=500, detail="DB error verifying teacher")
-    if not resp.data:
-        raise HTTPException(status_code=403, detail="Teacher not assigned to any courses")
-    return teacher_id
