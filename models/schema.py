@@ -66,3 +66,11 @@ class Attendance(BaseModel):
     course_id: int
     class_date: date
     attendance_link: str
+
+
+class Module(BaseModel):
+    module_id: int
+    course_id: int
+    teacher_id: str
+    module_name: str
+    module_description: Optional[str] = None
