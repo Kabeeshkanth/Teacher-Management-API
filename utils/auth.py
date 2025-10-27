@@ -1,21 +1,20 @@
-from fastapi import HTTPException, status, Header
+from fastapi import HTTPException, status, Request
 from utils.database import get_supabase_client
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def verify_teacher(teacher_id: str = Header(..., alias="X-Teacher-ID")) -> str:
+def verify_teacher(request: Request) -> str:
     """
-    FastAPI dependency to extract and validate teacher_id from request headers.
+    FastAPI dependency to extract and validate teacher_id from cookies.
     Returns the teacher_id if valid.
-
-    Usage: Add as dependency in route: teacher_id: str = Depends(verify_teacher)
     """
+    teacher_id = request.cookies.get("teacher_id")
     if not teacher_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Teacher ID header missing"
+            detail="Teacher ID not found in cookies"
         )
 
     verify_teacher_exists(teacher_id)
@@ -43,17 +42,16 @@ def verify_teacher_exists(teacher_id: str) -> None:
 
 def verify_teacher_course_access(teacher_id: str, course_id: int) -> None:
     """
-    Verify teacher exists and course exists.
-    Ownership check removed - any teacher can access any course.
+    Verify teacher exists and course exists and is assigned to teacher.
     Raises:
-      - 403 if teacher not found
+      - 403 if teacher not found or course not assigned
       - 404 if course not found
       - 500 on DB error
     """
     verify_teacher_exists(teacher_id)
 
     supabase = get_supabase_client()
-    resp = supabase.table("course").select("course_id").eq("course_id", course_id).execute()
+    resp = supabase.table("course").select("course_id").eq("course_id", course_id).eq("teacher_ids", teacher_id).execute()
 
     if getattr(resp, "error", None):
         logger.error("DB error checking course: %s", resp.error)
@@ -61,4 +59,18 @@ def verify_teacher_course_access(teacher_id: str, course_id: int) -> None:
 
     rows = getattr(resp, "data", None)
     if not rows:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found or not assigned to teacher")
+
+
+def verify_teacher_form(teacher_id: str) -> str:
+    """
+    Verify teacher_id from form input against courses table.
+    Raises 403 if no courses assigned.
+    """
+    supabase = get_supabase_client()
+    resp = supabase.table("course").select("course_id").eq("teacher_ids", teacher_id).execute()
+    if getattr(resp, "error", None):
+        raise HTTPException(status_code=500, detail="DB error verifying teacher")
+    if not resp.data:
+        raise HTTPException(status_code=403, detail="Teacher not assigned to any courses")
+    return teacher_id
