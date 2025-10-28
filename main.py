@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+
+from fastapi import FastAPI, Depends # <-- Add Depends
 from routers import teacher
+from utils.auth import verify_teacher
 
 app = FastAPI(
     title="Teacher Management API",
@@ -7,9 +9,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-app.include_router(teacher.router)
+app.include_router(teacher.router, dependencies=[Depends(verify_teacher)])
 
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Teacher Management API"}
+
