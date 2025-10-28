@@ -32,11 +32,7 @@ def upload_assignment_logic(
     - created_at (auto-generated DEFAULT CURRENT_TIMESTAMP)
     """
     verify_teacher_course_access(teacher_id, course_id)
-    # Verify module belongs to course and teacher
     supabase = get_supabase_client()
-    module_resp = supabase.table("modules").select("module_id").eq("module_id", module_id).eq("course_id", course_id).eq("teacher_id", teacher_id).execute()
-    if not module_resp.data:
-        raise HTTPException(status_code=404, detail="Module not found for this course and teacher")
 
     payload: Dict[str, Any] = {
         "course_id": course_id,
@@ -81,9 +77,9 @@ def upload_assignment_logic(
 
 def get_assignments_for_module(teacher_id: str, module_id: int) -> List[Dict[str, Any]]:
     supabase = get_supabase_client()
-    module_resp = supabase.table("modules").select("course_id").eq("module_id", module_id).eq("teacher_id", teacher_id).execute()
+    module_resp = supabase.table("modules").select("course_id").eq("module_id", module_id).execute()
     if not module_resp.data:
-        raise HTTPException(status_code=404, detail="Module not found or not owned")
+        raise HTTPException(status_code=404, detail="Module not found")
     course_id = module_resp.data[0]["course_id"]
     verify_teacher_course_access(teacher_id, course_id)
     resp = supabase.table("assignments").select("*").eq("module_id", module_id).execute()

@@ -114,11 +114,18 @@ async def upload_assignment(
     module_id: int = Form(...),
     assignment_title: str = Form(...),
     description: Optional[str] = Form(None),
-    due_date: Optional[datetime] = Form(None),
+    due_date: Optional[str] = Form(None),  # Changed to str for manual parsing
     file_link: str = Form(...),
 ):
+    # Parse due_date if provided
+    parsed_due_date = None
+    if due_date:
+        try:
+            parsed_due_date = datetime.fromisoformat(due_date.strip())  # Strip whitespace and parse
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid due_date format. Use ISO format like '2023-12-31T23:59:59'")
     return teacher_service.upload_assignment_logic(
-        teacher_id, course_id, module_id, assignment_title, description, due_date, file_link
+        teacher_id, course_id, module_id, assignment_title, description, parsed_due_date, file_link
     )
 
 
@@ -128,7 +135,7 @@ async def update_assignment(
     teacher_id: str = Depends(verify_teacher),
     assignment_title: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
-    due_date: Optional[datetime] = Form(None),
+    due_date: Optional[str] = Form(None),  # Changed to str for manual parsing
     file_link: Optional[str] = Form(None),
 ):
     updates = {}
@@ -137,7 +144,11 @@ async def update_assignment(
     if description is not None:
         updates["description"] = description
     if due_date:
-        updates["due_date"] = due_date.isoformat()
+        try:
+            parsed_due_date = datetime.fromisoformat(due_date.strip())  # Strip whitespace and parse
+            updates["due_date"] = parsed_due_date.isoformat()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid due_date format. Use ISO format like '2023-12-31T23:59:59'")
     if file_link:
         updates["file_path"] = file_link
     return teacher_service.update_assignment(teacher_id, assignment_id, **updates)

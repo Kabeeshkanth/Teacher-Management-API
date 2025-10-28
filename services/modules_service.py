@@ -20,12 +20,17 @@ def get_modules_for_course(teacher_id: str, course_id: int) -> List[Module]:
 
 def get_module(teacher_id: str, module_id: int) -> Module:
     supabase = get_supabase_client()
-    resp = supabase.table("modules").select("*").eq("module_id", module_id).eq("teacher_id", teacher_id).execute()
+    resp = supabase.table("modules").select("*").eq("module_id", module_id).execute()
     if getattr(resp, "error", None):
         raise HTTPException(status_code=500, detail="Error fetching module")
     if not resp.data:
-        raise HTTPException(status_code=404, detail="Module not found or not owned")
-    return Module(**resp.data[0])
+        raise HTTPException(status_code=404, detail="Module not found")
+
+    module_data = resp.data[0]
+    course_id = module_data["course_id"]
+    verify_teacher_course_access(teacher_id, course_id)
+
+    return Module(**module_data)
 
 
 def create_module(teacher_id: str, course_id: int, module_name: str, module_description: Optional[str]) -> Module:
@@ -43,14 +48,15 @@ def create_module(teacher_id: str, course_id: int, module_name: str, module_desc
     return Module(**resp.data[0])
 
 
-def update_module(teacher_id: str, module_id: int, module_name: Optional[str], module_description: Optional[str]) -> Module:
-    # ensure module exists and is owned by teacher, and verify course access
+def update_module(teacher_id: str, module_id: int, module_name: Optional[str],
+                  module_description: Optional[str]) -> Module:
+    # ensure module exists and verify course access
     supabase = get_supabase_client()
-    module_resp = supabase.table("modules").select("course_id").eq("module_id", module_id).eq("teacher_id", teacher_id).execute()
+    module_resp = supabase.table("modules").select("course_id").eq("module_id", module_id).execute()
     if getattr(module_resp, "error", None):
-        raise HTTPException(status_code=500, detail="Error checking module ownership")
+        raise HTTPException(status_code=500, detail="Error checking module")
     if not module_resp.data:
-        raise HTTPException(status_code=404, detail="Module not found or not owned")
+        raise HTTPException(status_code=404, detail="Module not found")
     course_id = module_resp.data[0]["course_id"]
     verify_teacher_course_access(teacher_id, course_id)
 
@@ -72,11 +78,11 @@ def update_module(teacher_id: str, module_id: int, module_name: Optional[str], m
 
 def delete_module(teacher_id: str, module_id: int) -> Dict[str, str]:
     supabase = get_supabase_client()
-    module_resp = supabase.table("modules").select("course_id").eq("module_id", module_id).eq("teacher_id", teacher_id).execute()
+    module_resp = supabase.table("modules").select("course_id").eq("module_id", module_id).execute()
     if getattr(module_resp, "error", None):
-        raise HTTPException(status_code=500, detail="Error checking module ownership")
+        raise HTTPException(status_code=500, detail="Error checking module")
     if not module_resp.data:
-        raise HTTPException(status_code=404, detail="Module not found or not owned")
+        raise HTTPException(status_code=404, detail="Module not found")
     course_id = module_resp.data[0]["course_id"]
     verify_teacher_course_access(teacher_id, course_id)
 

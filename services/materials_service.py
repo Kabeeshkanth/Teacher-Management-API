@@ -21,9 +21,6 @@ def upload_lecture_notes_logic(teacher_id: str, course_id: int, module_id: int, 
     """
     verify_teacher_course_access(teacher_id, course_id)
     supabase = get_supabase_client()
-    module_resp = supabase.table("modules").select("module_id").eq("module_id", module_id).eq("course_id", course_id).eq("teacher_id", teacher_id).execute()
-    if not module_resp.data:
-        raise HTTPException(status_code=404, detail="Module not found for this course and teacher")
 
     try:
         response = supabase.table("course_materials").insert({
@@ -60,9 +57,9 @@ def upload_lecture_notes_logic(teacher_id: str, course_id: int, module_id: int, 
 
 def get_materials_for_module(teacher_id: str, module_id: int) -> List[CourseMaterial]:
     supabase = get_supabase_client()
-    module_resp = supabase.table("modules").select("course_id").eq("module_id", module_id).eq("teacher_id", teacher_id).execute()
+    module_resp = supabase.table("modules").select("course_id").eq("module_id", module_id).execute()
     if not module_resp.data:
-        raise HTTPException(status_code=404, detail="Module not found or not owned")
+        raise HTTPException(status_code=404, detail="Module not found")
     course_id = module_resp.data[0]["course_id"]
     verify_teacher_course_access(teacher_id, course_id)
     resp = supabase.table("course_materials").select("*").eq("module_id", module_id).execute()
