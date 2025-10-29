@@ -1,5 +1,5 @@
 
-from fastapi import FastAPI, Depends # <-- Add Depends
+from fastapi import FastAPI, Depends
 from routers import teacher
 from utils.auth import verify_teacher
 
